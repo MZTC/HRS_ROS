@@ -1,0 +1,77 @@
+<launch>
+
+      <!-- Run a passthrough filter to down-sample the sensor point cloud.-->
+    <!-- <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/> -->
+    
+    <arg name="length_x"  default="20.0"/>
+    <arg name="length_y"  default="20.0"/>
+    <arg name="world"  default="T96"/>
+
+    <node pkg="hrs_nav" type="mop_heightmap_normalizer.py" name="heightmap_normalizer" output="screen">
+        <param name="target_model" value="scout/" />
+        <param name="image_path"   value="$(find hrs_nav)/height_maps/$(arg world).png" />
+        <param name="world_size_x" value="200.0" />
+        <param name="world_size_y" value="200.0" />
+        <param name="max_z"        value="5.0" />
+
+        <param name="world_frame"  value="map" />
+        <param name="map_frame"    value="offset_map" />
+        <param name="z_offset"   value="0" />
+    </node>
+
+
+
+    <node pkg="hrs_nav" type="vis_map.py" name="vis_map" output="screen">
+        <param name="image_path" value="$(find hrs_nav)/height_maps/$(arg world).png" />
+        <param name="world_x"    value="200.0" />
+        <param name="world_y"    value="200.0" />
+        <param name="max_z"      value="5.0" />
+        <param name="frame_id"   value="offset_map" />
+        <param name="density_stride"   value="1" />
+        <param name="z_offset"   value="-0.4" />
+        <param name="pub_duaration"   value="10" />
+    </node> 
+
+    <node pkg="hrs_nav" type="pc2_transformer_node.py" name="heightmap_pointcloud_trans" output="screen">
+        <param name="target_frame" value="world" />
+        <param name="source_topic"    value="/heightmap_pointcloud" />
+        <param name="target_topic"    value="/heightmap_pointcloud_in_world" />
+    </node> 
+    
+    <node name="gt_cropper" pkg="hrs_nav" type="pc_cropper.py" output="screen">
+        <param name="model_name"   value="scout/" />
+        <param name="crop_x"       value="$(arg length_x)" />  
+        <param name="crop_y"       value="$(arg length_y)" />  
+        <param name="input_topic"  value="/heightmap_pointcloud_in_world" />
+        <param name="output_topic"  value="/heightmap_pointcloud_crop" />
+        <param name="world_frame"  value="world" /> 
+    </node>
+
+    <node pkg="hrs_nav" type="local_elevation_map.py" name="local_elevation_map" output="screen">
+        <param name="input_topic"   value="/heightmap_pointcloud_crop" />
+        <param name="output_topic"  value="/local_elevation_map" /> 
+        <param name="length_x"  value="$(arg length_x)" /> 
+        <param name="length_y"  value="$(arg length_y)" /> 
+        <param name="resolution"  value="0.5" /> 
+    </node>
+
+    <node pkg="hrs_nav" type="virtual_base_publisher.py" name="virtual_base_publisher" output="screen">
+    </node>
+
+    <!-- Launch elevation mapping node. -->
+    <!-- <node pkg="elevation_mapping" type="elevation_mapping" name="elevation_mapping" output="screen">
+        <rosparam command="load" file="$(find hrs_nav)/config/robots/scout2.yaml"/>
+        <rosparam command="load" file="$(find hrs_nav)/config/postprocessing/postprocessor_pipeline.yaml"/>
+    </node> -->
+
+    <node name="rviz_hrs_nav" pkg="rviz" type="rviz" args="-d $(find hrs_nav)/rviz/nav.rviz" required="true"/>
+    
+    <node name="mop_local_planner" pkg="hrs_nav" type="mop_local_planner.py">
+        <param name="path_topic" value="/local_planned_path" />
+        <param name="obs_topic" value="/velodyne_points" />
+    </node>
+  
+    <node name="mop_controller" pkg="hrs_nav" type="mop_controller.py">
+    </node>
+
+</launch>

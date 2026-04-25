@@ -1,0 +1,31 @@
+postprocessor_pipeline: # set by postprocessor_pipeline_name
+  # Fill holes in the map with inpainting.
+  # - name: fill_holes
+  #   type: gridMapFilters/InpaintFilter
+  #   params:
+  #     input_layer: elevation
+  #     output_layer: elevation_filled
+  #     radius: 0.55  # 填补半径，设为略大于你的采样间隔
+
+  - name: inpaint
+    type: gridMapCv/InpaintFilter
+    params:
+      input_layer: elevation
+      output_layer: elevation_inpainted
+      radius: 5
+
+  # Compute Surface normals
+  # - name: surface_normals
+  #   type: gridMapFilters/NormalVectorsFilter
+  #   params:
+  #     input_layer: elevation_inpainted
+  #     output_layers_prefix: normal_vectors_
+  #     radius: 0.1
+  #     normal_vector_positive_axis: z
+  
+
+  #  Delete layers that are not needed to reduce bandwidth
+  #  - name: delete_original_layers
+  #    type: gridMapFilters/DeletionFilter
+  #    params:
+  #      layers: [lowest_scan_point,sensor_x_at_lowest_scan, sensor_y_at_lowest_scan, sensor_z_at_lowest_scan] # List of layers.

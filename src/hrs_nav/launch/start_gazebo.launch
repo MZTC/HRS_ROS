@@ -1,0 +1,38 @@
+<launch>
+
+  <arg name="world"  default="T96"/>
+
+  <include file="$(find hrs_nav)/launch/launch_gazebo.launch">
+    <arg name="world" value="$(find hrs_nav)/worlds/$(arg world).world"/>
+  </include>
+
+  <!-- <include file="$(find scout_gazebo_sim)/launch/spawn_scout_v2.launch">
+    <arg name="x" value="0"/>
+    <arg name="y" value="0"/>
+    <arg name="z" value="0.5"/>
+  </include> -->
+
+  <include file="$(find scout_gazebo_sim)/launch/spawn_scout_v2.launch">
+    <arg name="x" value="-25"/>
+    <arg name="y" value="-75"/>
+    <arg name="z" value="1"/>
+  </include>
+
+  <node pkg="tf" type="static_transform_publisher" name="world_to_map" args="0 0 0 0 0 0 /world /map 10" />
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 /map /odom 10" />
+
+
+  <node name="sim_odom" pkg="hrs_nav" type="sim_odom_publisher.py" >
+      <param name="model_name" value="scout" />
+      <param name="world_frame" value="odom" />
+      <param name="odom_topic" value="/odom" />
+      <param name="base_frame" value="base_link" />
+
+  </node>
+  
+  <node name="tf2pos" pkg="hrs_nav" type="tf_to_pose_publisher.py" >
+      <param name="from_frame" value="odom" />
+      <param name="to_frame" value="base_link" />
+  </node>
+
+</launch>
