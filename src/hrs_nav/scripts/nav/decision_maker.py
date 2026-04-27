@@ -4,6 +4,10 @@ from grid_map_msgs.msg import GridMap
 from geometry_msgs.msg import PoseStamped, Point
 import rospy
 
+
+import zlib
+import pickle
+
 class SubGoal:
     def __init__(self, x=0, y=0, z=0):
         self.x = x
@@ -144,7 +148,9 @@ class DecisionMaker:
 
         # --- 3. 调用 Flask 服务 ---
         try:
-            response = requests.post(self.decision_url, json=payload, timeout=1)
+            compressed_data = zlib.compress(pickle.dumps(payload))
+
+            response = requests.post(self.decision_url, data=compressed_data, timeout=1)
             res_data = response.json()
             
             if res_data.get('status') == 'success':

@@ -7,6 +7,36 @@ from nav_msgs.msg import Path
 import tf2_ros
 import tf2_geometry_msgs
 
+import zlib
+import pickle
+import sys
+import json
+
+def get_compression_stats(payload):
+    """
+    统计数据压缩前后的体积及压缩率
+    """
+    # 1. 模拟 JSON 序列化后的原始大小 (字符串)
+    raw_json_str = json.dumps(payload)
+    raw_size_bytes = len(raw_json_str.encode('utf-8'))
+    
+    # 2. 执行 zlib 压缩 (二进制)
+    # level=6 是速度与压缩率的均衡点，level=1 最快
+    compressed_data = zlib.compress(raw_json_str.encode('utf-8'), level=6)
+    compressed_size_bytes = len(compressed_data)
+    
+    # 3. 计算压缩率
+    compression_ratio = (1 - compressed_size_bytes / raw_size_bytes) * 100
+    
+    print("-" * 30)
+    print(f"数据压缩统计报告:")
+    print(f"原始体积 (JSON): {raw_size_bytes / 1024:.2f} KB")
+    print(f"压缩后体积 (Zlib): {compressed_size_bytes / 1024:.2f} KB")
+    print(f"节省空间: {compression_ratio:.2f}%")
+    print("-" * 30)
+    
+    return compressed_data, compression_ratio
+
 
 def process_grid_map(grid_map_msg:GridMap):
     # --- 1. 动态获取地图尺寸与数据 ---
@@ -76,7 +106,11 @@ class Planner:
         
         # --- 3. 调用 Flask 服务 ---
         try:
-            response = requests.post(self.planner_url, json=payload, timeout=0.8)
+            # get_compression_stats(payload)
+            
+            compressed_data = zlib.compress(pickle.dumps(payload))
+
+            response = requests.post(self.planner_url, data=compressed_data, timeout=1)
             res_data = response.json()
             
             if res_data.get('status') == 'success':
