@@ -1,3 +1,7 @@
+---
+license: mit
+---
+
 # HRS_ROS 导航系统
 
 [<video src="video/demo_low.mp4" controls width="100%"></video>
